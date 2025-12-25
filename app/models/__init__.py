@@ -31,7 +31,7 @@ class User(TimestampMixin, db.Model):
     tournaments = db.relationship("Tournament", back_populates="organizer", lazy="dynamic")
 
     def set_password(self, raw_password: str) -> None:
-        self.password_hash = generate_password_hash(raw_password)
+        self.password_hash = generate_password_hash(raw_password, method="pbkdf2:sha256")
 
     def verify_password(self, raw_password: str) -> bool:
         return check_password_hash(self.password_hash, raw_password)
