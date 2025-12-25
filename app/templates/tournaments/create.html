@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Create tournament{% endblock %}
+{% block content %}
+<h2>Create tournament</h2>
+<form method="post">
+  <label>Name<input type="text" name="name" required></label>
+  <label>Discipline<input type="text" name="discipline" required></label>
+  <label>Start date<input type="datetime-local" name="start_at" required></label>
+  <label>Signup deadline<input type="datetime-local" name="signup_deadline" required></label>
+  <label>Max participants<input type="number" name="max_participants" min="2" required></label>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}

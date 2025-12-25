@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My dashboard{% endblock %}
+{% block content %}
+<h2>My dashboard</h2>
+<section>
+  <h3>Upcoming matches</h3>
+  {% if upcoming_matches %}
+    <ul>
+      {% for match in upcoming_matches %}
+        <li>{{ match }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No upcoming matches.</p>
+  {% endif %}
+</section>
+<section>
+  <h3>Registered tournaments</h3>
+  {% if upcoming_tournaments %}
+    <ul>
+      {% for tournament in upcoming_tournaments %}
+        <li>{{ tournament }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No tournaments yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

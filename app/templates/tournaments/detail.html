@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Tournament {{ tournament_id }}{% endblock %}
+{% block content %}
+<h2>Tournament {{ tournament_id }}</h2>
+<p>Details placeholder.</p>
+<form method="post" action="{{ url_for('tournaments.create') }}">
+  <button type="submit">Apply (placeholder)</button>
+</form>
+{% endblock %}

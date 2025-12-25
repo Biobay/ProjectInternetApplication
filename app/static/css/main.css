@@ -1,0 +1,56 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+.container {
+  width: min(960px, 90vw);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.site-header,
+.site-footer {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+.site-header a,
+.site-footer a {
+  color: #f9fafb;
+  margin-right: 1rem;
+  text-decoration: none;
+}
+
+main {
+  min-height: 70vh;
+}
+
+form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+}
+
+input,
+button {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+.flash-messages {
+  list-style: none;
+  padding: 0.5rem;
+}

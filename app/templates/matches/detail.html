@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Match {{ match_id }}{% endblock %}
+{% block content %}
+<h2>Match {{ match_id }}</h2>
+<p>Match details placeholder.</p>
+<form method="post" action="{{ url_for('matches.report_result', match_id=match_id) }}">
+  <label>Winner ID
+    <input type="number" name="winner" required>
+  </label>
+  <button type="submit">Report result</button>
+</form>
+{% endblock %}
