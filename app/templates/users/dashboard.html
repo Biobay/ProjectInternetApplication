@@ -1,33 +1,99 @@
 {% extends "base.html" %}
-{% block title %}My dashboard{% endblock %}
+{% block title %}Dashboard utente{% endblock %}
 {% block content %}
-<h2>My dashboard</h2>
-<section>
+<h2>Il tuo profilo</h2>
+
+<section class="user-dashboard-account">
   <h3>Account</h3>
-  <p><a href="{{ url_for('auth.logout') }}">Logout</a></p>
+  <p>Sei collegato come <strong>{{ current_user.first_name }} {{ current_user.last_name }}</strong></p>
+  <p><a href="{{ url_for('auth.logout') }}">Esci</a></p>
 </section>
-<section>
-  <h3>Upcoming matches</h3>
+
+<section class="user-dashboard-section">
+  <h3>Le tue prossime partite</h3>
+  <p class="section-intro">
+    Qui trovi solo le sfide ancora da giocare dove sei tu uno dei due giocatori.
+  </p>
   {% if upcoming_matches %}
-    <ul>
+    <ul class="dashboard-list">
       {% for match in upcoming_matches %}
-        <li>{{ match }}</li>
+        {% set max_round = max_rounds_by_tournament.get(match.tournament_id) %}
+        {% if max_round %}
+          {% if match.round_number == max_round %}
+            {% set round_label = "Finale" %}
+          {% elif match.round_number == max_round - 1 %}
+            {% set round_label = "Semifinale" %}
+          {% elif match.round_number == max_round - 2 %}
+            {% set round_label = "Quarti di finale" %}
+          {% else %}
+            {% set round_label = "Round " ~ match.round_number %}
+          {% endif %}
+        {% else %}
+          {% set round_label = "Round " ~ match.round_number %}
+        {% endif %}
+
+        {% set is_player_a = match.player_a and match.player_a.user_id == current_user.id %}
+        {% set me = match.player_a.user if is_player_a else match.player_b.user %}
+        {% set opp = match.player_b.user if is_player_a else match.player_a.user %}
+
+        <li class="dashboard-item">
+          <div class="dashboard-item-main">
+            <strong>{{ match.tournament.discipline|capitalize }}:</strong>
+            {% if opp %}
+              {{ me.first_name }} vs {{ opp.first_name }} {{ "(" ~ round_label ~ ")" }}
+            {% else %}
+              {{ me.first_name }} vs (avversario da definire) {{ "(" ~ round_label ~ ")" }}
+            {% endif %}
+          </div>
+          <div class="dashboard-item-meta">
+            Torneo:
+            <a href="{{ url_for('tournaments.details', tournament_id=match.tournament.id) }}">
+              {{ match.tournament.name }}
+            </a>
+          </div>
+          <div class="dashboard-item-actions">
+            <a href="{{ url_for('tournaments.details', tournament_id=match.tournament.id) }}">
+              Vai al torneo / inserisci risultato
+            </a>
+          </div>
+        </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p>No upcoming matches.</p>
+    <p>Al momento non hai partite da giocare.</p>
   {% endif %}
 </section>
-<section>
-  <h3>Registered tournaments</h3>
+
+<section class="user-dashboard-section">
+  <h3>I tuoi tornei</h3>
+  <p class="section-intro">
+    Elenco dei tornei a cui sei iscritto, con stato e partecipanti.
+  </p>
   {% if upcoming_tournaments %}
-    <ul>
+    <ul class="dashboard-list">
       {% for tournament in upcoming_tournaments %}
-        <li>{{ tournament }}</li>
+        <li class="dashboard-item">
+          <div class="dashboard-item-main">
+            <a href="{{ url_for('tournaments.details', tournament_id=tournament.id) }}">
+              {{ tournament.name }}
+            </a>
+            <span class="tag">{{ tournament.discipline|capitalize }}</span>
+          </div>
+          <div class="dashboard-item-meta">
+            {% if now < tournament.signup_deadline %}
+              <span class="status-open">Iscrizioni aperte</span>
+            {% elif now < tournament.start_at %}
+              <span class="status-pending">Iscrizioni chiuse (in attesa di inizio)</span>
+            {% else %}
+              <span class="status-running">In corso</span>
+            {% endif %}
+            · Partecipanti: {{ tournament.participants|length }}/{{ tournament.max_participants }}
+          </div>
+        </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p>No tournaments yet.</p>
+    <p>Non sei ancora iscritto a nessun torneo.</p>
   {% endif %}
 </section>
 {% endblock %}

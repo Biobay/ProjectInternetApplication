@@ -110,5 +110,26 @@ class Match(TimestampMixin, db.Model):
     player_b_id = db.Column(db.Integer, db.ForeignKey("tournament_participants.id"))
     winner_id = db.Column(db.Integer, db.ForeignKey("tournament_participants.id"))
     report_token = db.Column(db.String(64))
+    player_a_reported_winner_id = db.Column(
+        db.Integer, db.ForeignKey("tournament_participants.id")
+    )
+    player_b_reported_winner_id = db.Column(
+        db.Integer, db.ForeignKey("tournament_participants.id")
+    )
 
     tournament = db.relationship("Tournament", back_populates="matches")
+    player_a = db.relationship(
+        "TournamentParticipant", foreign_keys=[player_a_id], uselist=False
+    )
+    player_b = db.relationship(
+        "TournamentParticipant", foreign_keys=[player_b_id], uselist=False
+    )
+    winner = db.relationship(
+        "TournamentParticipant", foreign_keys=[winner_id], uselist=False
+    )
+    player_a_reported_winner = db.relationship(
+        "TournamentParticipant", foreign_keys=[player_a_reported_winner_id], uselist=False
+    )
+    player_b_reported_winner = db.relationship(
+        "TournamentParticipant", foreign_keys=[player_b_reported_winner_id], uselist=False
+    )

@@ -42,6 +42,17 @@
   {% endif %}
 </dl>
 
+<h3>Participants</h3>
+{% if participants %}
+  <ul>
+    {% for p in participants %}
+      <li>#{{ p.ranking }} - {{ p.license_number }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No participants yet.</p>
+{% endif %}
+
 {% if tournament.google_maps_url %}
   <h3>Location map</h3>
   <iframe
@@ -55,11 +66,77 @@
   </iframe>
 {% endif %}
 
+{% if matches_by_round %}
+  <h3>GRAFIC</h3>
+  <div class="tournament-bracket">
+    {% for round_number, round_matches in matches_by_round.items() %}
+      <div class="round round-{{ round_number }}">
+        <h4>Round {{ round_number }}</h4>
+        {% for match in round_matches %}
+          <div class="match-card">
+            <div class="match-label">Match {{ match.bracket_position }}</div>
+
+            <div class="player p1 {% if match.player_a and match.winner_id == match.player_a.id %}winner{% endif %}">
+              {% if match.player_a %}
+                #{{ match.player_a.ranking }} ({{ match.player_a.license_number }})
+              {% else %}
+                BYE
+              {% endif %}
+            </div>
+
+            <div class="player p2 {% if match.player_b and match.winner_id == match.player_b.id %}winner{% endif %}">
+              {% if match.player_b %}
+                #{{ match.player_b.ranking }} ({{ match.player_b.license_number }})
+              {% else %}
+                BYE
+              {% endif %}
+            </div>
+
+            {% if match.player_a and match.player_b %}
+              {% if match.winner %}
+                <div class="match-status done">
+                  Winner: #{{ match.winner.ranking }} ({{ match.winner.license_number }})
+                </div>
+              {% elif current_user.is_authenticated and (current_user.id == match.player_a.user_id or current_user.id == match.player_b.user_id) %}
+                <form class="match-report-form" method="post" action="{{ url_for('tournaments.report_match_result', match_id=match.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <label>
+                    <input type="radio" name="winner_id" value="{{ match.player_a.id }}" required>
+                    {{ match.player_a.license_number }} won
+                  </label>
+                  <label>
+                    <input type="radio" name="winner_id" value="{{ match.player_b.id }}" required>
+                    {{ match.player_b.license_number }} won
+                  </label>
+                  <button type="submit">Confirm result</button>
+                </form>
+                {% if current_user.id == match.player_a.user_id and match.player_a_reported_winner %}
+                  <div class="match-status pending">You have reported that {{ match.player_a_reported_winner.license_number }} won. Waiting for the other player.</div>
+                {% elif current_user.id == match.player_b.user_id and match.player_b_reported_winner %}
+                  <div class="match-status pending">You have reported that {{ match.player_b_reported_winner.license_number }} won. Waiting for the other player.</div>
+                {% endif %}
+              {% else %}
+                <div class="match-status pending">Result pending (awaiting players' confirmation).</div>
+              {% endif %}
+            {% else %}
+              <div class="match-status pending">Waiting for opponent.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 {% if current_user.is_authenticated %}
   {% if is_organizer %}
     <p>
       <a href="{{ url_for('tournaments.edit', tournament_id=tournament.id) }}">Edit tournament</a>
     </p>
+    <form method="post" action="{{ url_for('tournaments.generate_bracket_now', tournament_id=tournament.id) }}" style="margin-top: 0.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit">Generate bracket now</button>
+    </form>
     <form method="post" action="{{ url_for('tournaments.delete', tournament_id=tournament.id) }}" style="margin-top: 0.5rem;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" onclick="return confirm('Are you sure you want to delete this tournament?');">

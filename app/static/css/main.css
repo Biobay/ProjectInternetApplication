@@ -54,3 +54,132 @@ button {
   list-style: none;
   padding: 0.5rem;
 }
+
+/* Tournament bracket visualization */
+.tournament-bracket {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 2.5rem;
+  overflow-x: auto;
+  padding: 1rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f9fafb, #eef2ff);
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  min-width: 220px;
+  position: relative;
+}
+
+.round > h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Vertical "spine" for rounds after the first, to suggest the tree */
+.round:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 1.5rem;
+  bottom: 0.75rem;
+  width: 1px;
+  background: #d1d5db;
+}
+
+.match-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
+  position: relative;
+}
+
+/* Line towards the next round (to the right) */
+.match-card:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  width: 20px;
+  height: 1px;
+  background: #d1d5db;
+}
+
+/* Line coming from previous round (from the left) for rounds after the first */
+.round:not(:first-child) .match-card::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  width: 20px;
+  height: 1px;
+  background: #d1d5db;
+}
+
+.match-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.player {
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: #f9fafb;
+}
+
+.player + .player {
+  margin-top: 0.25rem;
+}
+
+.player.winner {
+  font-weight: 600;
+  color: #047857;
+  background-color: #ecfdf5;
+}
+
+.match-status {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.match-status.done {
+  color: #065f46;
+}
+
+.match-status.pending {
+  color: #6b7280;
+}
+
+.match-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+}
+
+.match-report-form label {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.match-report-form button {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
