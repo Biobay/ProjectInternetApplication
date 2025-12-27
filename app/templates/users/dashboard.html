@@ -3,6 +3,10 @@
 {% block content %}
 <h2>My dashboard</h2>
 <section>
+  <h3>Account</h3>
+  <p><a href="{{ url_for('auth.logout') }}">Logout</a></p>
+</section>
+<section>
   <h3>Upcoming matches</h3>
   {% if upcoming_matches %}
     <ul>

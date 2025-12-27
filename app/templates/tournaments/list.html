@@ -2,6 +2,11 @@
 {% block title %}Tournaments{% endblock %}
 {% block content %}
 <h2>Upcoming tournaments</h2>
+<form method="get">
+  <label for="q">Search</label>
+  <input type="text" id="q" name="q" value="{{ q or '' }}" />
+  <button type="submit">Search</button>
+</form>
 {% if tournaments %}
   <ul>
     {% for tournament in tournaments %}
@@ -16,8 +21,12 @@
   <p>No tournaments yet.</p>
 {% endif %}
 <nav>
-  <a href="{{ url_for('tournaments.list_tournaments', page=page - 1) }}">Prev</a>
+  {% if has_prev %}
+    <a href="{{ url_for('tournaments.list_tournaments', page=prev_page, q=q) }}">Prev</a>
+  {% endif %}
   <span>Page {{ page }}</span>
-  <a href="{{ url_for('tournaments.list_tournaments', page=page + 1) }}">Next</a>
+  {% if has_next %}
+    <a href="{{ url_for('tournaments.list_tournaments', page=next_page, q=q) }}">Next</a>
+  {% endif %}
 </nav>
 {% endblock %}

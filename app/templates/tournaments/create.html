@@ -3,11 +3,72 @@
 {% block content %}
 <h2>Create tournament</h2>
 <form method="post">
-  <label>Name<input type="text" name="name" required></label>
-  <label>Discipline<input type="text" name="discipline" required></label>
-  <label>Start date<input type="datetime-local" name="start_at" required></label>
-  <label>Signup deadline<input type="datetime-local" name="signup_deadline" required></label>
-  <label>Max participants<input type="number" name="max_participants" min="2" required></label>
+  {{ form.hidden_tag() }}
+
+  <label>Name
+    {{ form.name(size=48) }}
+    {% for error in form.name.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Discipline
+    {{ form.discipline() }}
+    {% for error in form.discipline.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Location
+    {{ form.venue_name(size=64) }}
+    {% for error in form.venue_name.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Start date and time
+    {{ form.start_at(type="datetime-local") }}
+    {% for error in form.start_at.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Signup deadline
+    {{ form.signup_deadline(type="datetime-local") }}
+    {% for error in form.signup_deadline.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Max participants
+    {{ form.max_participants(min=2) }}
+    {% for error in form.max_participants.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Description
+    {{ form.description(rows=3, cols=60) }}
+    {% for error in form.description.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Google Maps URL
+    {{ form.google_maps_url(size=80) }}
+    <small>Puoì incollare direttamente il codice &lt;iframe&gt; di Google Maps: estrarremo automaticamente l'URL.</small>
+    {% for error in form.google_maps_url.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
+  <label>Sponsor logos (one URL per line)
+    {{ form.sponsor_logos(rows=3, cols=60) }}
+    {% for error in form.sponsor_logos.errors %}
+      <div class="field-error">{{ error }}</div>
+    {% endfor %}
+  </label>
+
   <button type="submit">Save</button>
 </form>
 {% endblock %}

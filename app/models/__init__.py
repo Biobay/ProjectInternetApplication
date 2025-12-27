@@ -39,6 +39,15 @@ class User(TimestampMixin, db.Model):
     def get_id(self) -> str:
         return str(self.id)
 
+    # Flask-Login integration
+    @property
+    def is_authenticated(self) -> bool:  # type: ignore[override]
+        return True
+
+    @property
+    def is_anonymous(self) -> bool:  # type: ignore[override]
+        return False
+
 
 class Tournament(TimestampMixin, db.Model):
     __tablename__ = "tournaments"
@@ -59,8 +68,16 @@ class Tournament(TimestampMixin, db.Model):
     status = db.Column(db.String(50), default="draft", nullable=False)
 
     organizer = db.relationship("User", back_populates="tournaments")
-    participants = db.relationship("TournamentParticipant", back_populates="tournament")
-    matches = db.relationship("Match", back_populates="tournament")
+    participants = db.relationship(
+        "TournamentParticipant",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
+    matches = db.relationship(
+        "Match",
+        back_populates="tournament",
+        cascade="all, delete-orphan",
+    )
 
 
 class TournamentParticipant(TimestampMixin, db.Model):

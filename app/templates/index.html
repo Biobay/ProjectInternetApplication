@@ -4,8 +4,37 @@
 
 {% block content %}
 <section>
-  <h2>Welcome</h2>
-  <p>This is the starting point for the Internet Applications tournament platform.</p>
-  <p>Use the navigation to explore tournaments or log in.</p>
+  <h2>Upcoming tournaments</h2>
+  {% if tournaments %}
+    <ul>
+      {% for tournament in tournaments %}
+        <li>
+          <a href="{{ url_for('tournaments.details', tournament_id=tournament.id) }}">
+            {{ tournament.name }}
+          </a>
+          {% if tournament.discipline %}
+            <small> — {{ tournament.discipline }}</small>
+          {% endif %}
+          {% if tournament.start_at %}
+            <small>
+              • {{ tournament.start_at.strftime('%Y-%m-%d %H:%M') }}
+            </small>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    <nav>
+      {% if has_prev %}
+        <a href="{{ url_for('core.index', page=prev_page) }}">Prev</a>
+      {% endif %}
+      <span>Page {{ page }}</span>
+      {% if has_next %}
+        <a href="{{ url_for('core.index', page=next_page) }}">Next</a>
+      {% endif %}
+    </nav>
+  {% else %}
+    <p>No upcoming tournaments found.</p>
+  {% endif %}
 </section>
 {% endblock %}

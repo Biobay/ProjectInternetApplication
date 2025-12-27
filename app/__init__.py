@@ -24,6 +24,8 @@ def register_extensions(app: Flask) -> None:
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
+    login_manager.login_message_category = "warning"
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)

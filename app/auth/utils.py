@@ -15,7 +15,7 @@ def generate_confirmation_token(email: str) -> str:
     return s.dumps(email)
 
 
-def confirm_token(token: str, expiration: int = 3600) -> str:
+def confirm_token(token: str, expiration: int = 24 * 3600) -> str:
     s = _get_serializer()
     return s.loads(token, max_age=expiration)
 
@@ -25,7 +25,7 @@ def generate_reset_token(email: str) -> str:
     return s.dumps(email)
 
 
-def confirm_reset_token(token: str, expiration: int = 3600) -> str:
+def confirm_reset_token(token: str, expiration: int = 24 * 3600) -> str:
     s = _get_serializer()
     return s.loads(token, max_age=expiration)
 

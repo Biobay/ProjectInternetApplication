@@ -1,9 +1,95 @@
 {% extends "base.html" %}
-{% block title %}Tournament {{ tournament_id }}{% endblock %}
+{% block title %}{{ tournament.name }}{% endblock %}
 {% block content %}
-<h2>Tournament {{ tournament_id }}</h2>
-<p>Details placeholder.</p>
-<form method="post" action="{{ url_for('tournaments.create') }}">
-  <button type="submit">Apply (placeholder)</button>
-</form>
+<h2>{{ tournament.name }}</h2>
+
+<dl>
+  <dt>Discipline</dt>
+  <dd>{{ tournament.discipline }}</dd>
+
+  <dt>Organizer</dt>
+  <dd>{{ tournament.organizer.first_name }} {{ tournament.organizer.last_name }}</dd>
+
+  <dt>Start time</dt>
+  <dd>{{ tournament.start_at }}</dd>
+
+  <dt>Signup deadline</dt>
+  <dd>{{ tournament.signup_deadline }}</dd>
+
+  <dt>Location</dt>
+  <dd>{{ tournament.venue_name }}</dd>
+
+  <dt>Max participants</dt>
+  <dd>{{ tournament.max_participants }}</dd>
+
+  <dt>Ranked players</dt>
+  <dd>{{ ranked_players_count }}</dd>
+
+  {% if tournament.description %}
+    <dt>Description</dt>
+    <dd>{{ tournament.description }}</dd>
+  {% endif %}
+
+  {% if tournament.sponsor_assets and tournament.sponsor_assets.logos %}
+    <dt>Sponsor logos</dt>
+    <dd>
+      <ul>
+        {% for logo in tournament.sponsor_assets.logos %}
+          <li><img src="{{ logo }}" alt="Sponsor logo" style="max-height: 40px;"></li>
+        {% endfor %}
+      </ul>
+    </dd>
+  {% endif %}
+</dl>
+
+{% if tournament.google_maps_url %}
+  <h3>Location map</h3>
+  <iframe
+    src="{{ tournament.google_maps_url }}"
+    width="600"
+    height="450"
+    style="border:0;"
+    allowfullscreen=""
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade">
+  </iframe>
+{% endif %}
+
+{% if current_user.is_authenticated %}
+  {% if is_organizer %}
+    <p>
+      <a href="{{ url_for('tournaments.edit', tournament_id=tournament.id) }}">Edit tournament</a>
+    </p>
+    <form method="post" action="{{ url_for('tournaments.delete', tournament_id=tournament.id) }}" style="margin-top: 0.5rem;">
+      <button type="submit" onclick="return confirm('Are you sure you want to delete this tournament?');">
+        Delete tournament
+      </button>
+    </form>
+  {% elif not is_already_participant and application_form %}
+    <h3>Apply to participate</h3>
+    <form method="post">
+      {{ application_form.hidden_tag() }}
+      <label>License number
+        {{ application_form.license_number(size=32) }}
+      </label>
+      {% for error in application_form.license_number.errors %}
+        <div class="field-error">{{ error }}</div>
+      {% endfor %}
+
+      <label>Ranking
+        {{ application_form.ranking(min=1) }}
+      </label>
+      {% for error in application_form.ranking.errors %}
+        <div class="field-error">{{ error }}</div>
+      {% endfor %}
+
+      <button type="submit">Apply</button>
+    </form>
+  {% elif is_already_participant %}
+    <p>You have already applied to this tournament.</p>
+  {% endif %}
+{% else %}
+  <p><a href="{{ url_for('auth.login') }}">Log in</a> to apply to this tournament.</p>
+{% endif %}
+
 {% endblock %}
