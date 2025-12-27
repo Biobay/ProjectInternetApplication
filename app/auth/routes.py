@@ -1,6 +1,18 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
-from .forms import RegistrationForm, LoginForm
-from .utils import generate_confirmation_token, confirm_token, send_confirmation_email
+from .forms import (
+    RegistrationForm,
+    LoginForm,
+    RequestPasswordResetForm,
+    ResetPasswordForm,
+)
+from .utils import (
+    generate_confirmation_token,
+    confirm_token,
+    send_confirmation_email,
+    generate_reset_token,
+    confirm_reset_token,
+    send_password_reset_email,
+)
 from ..extensions import db
 from ..models import User
 from flask_login import login_user, logout_user
@@ -50,6 +62,26 @@ def login():
     return render_template("auth/login.html", form=form)
 
 
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    form = RequestPasswordResetForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower()
+        user = User.query.filter_by(email=email).first()
+        if user and user.is_active:
+            token = generate_reset_token(user.email)
+            reset_url = url_for("auth.reset_password", token=token, _external=True)
+            send_password_reset_email(user.email, reset_url)
+
+        flash(
+            "If that email is registered, you'll receive a reset link shortly.",
+            "info",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/forgot_password.html", form=form)
+
+
 @auth_bp.get("/logout")
 def logout():
     logout_user()
@@ -78,3 +110,27 @@ def confirm_email(token: str):
 
     flash("Your account has been confirmed. You may now log in.", "success")
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    try:
+        email = confirm_reset_token(token, expiration=24 * 3600)
+    except Exception:
+        flash("The password reset link is invalid or has expired.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash("Your password has been updated. You can now log in.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/reset_password.html", form=form)
