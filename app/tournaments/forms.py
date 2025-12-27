@@ -30,7 +30,7 @@ class TournamentForm(FlaskForm):
     description = TextAreaField("Description", validators=[Length(max=2000)])
     google_maps_url = StringField(
         "Google Maps URL (puoi incollare anche l'iframe)",
-        validators=[Length(max=2000)],
+        validators=[Length(max=20000)],
     )
     sponsor_logos = TextAreaField(
         "Sponsor logos (one URL per line)", validators=[Length(max=2000)]
