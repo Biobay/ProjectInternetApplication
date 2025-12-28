@@ -1,5 +1,6 @@
 import click
 from flask import Flask
+from sqlalchemy import func
 
 from .extensions import db
 
@@ -167,6 +168,232 @@ def register_cli_commands(app: Flask) -> None:
         total_participants = TournamentParticipant.query.count()
         click.echo(
             f"Seed complete. Users: {User.query.count()}, Tournaments: {Tournament.query.count()}, Participants: {total_participants}."
+        )
+
+    @app.cli.command("seed-bracket-example")
+    def seed_bracket_example() -> None:
+        """Create a specific tournament + bracket scenario to test the tree.
+
+        This command creates:
+        - An organizer user "MARIO Mastrulli" (if not present)
+        - A tournament named "prova definitiva albero" with the dates you provided
+        - 10 participants with rankings 111–120 and the given license numbers
+        - Round 1 matches and example winners for matches 1–5
+
+        After running it, open the tournament detail page in the browser
+        to visually inspect the bracket.
+        """
+
+        from datetime import datetime
+
+        from .models import User, Tournament, TournamentParticipant, Match
+        from .tournaments.routes import _ensure_round1_bracket, _advance_winner
+
+        # 1) Ensure organizer exists
+        organizer_email = "mario.mastrulli@example.com"
+        organizer = User.query.filter_by(email=organizer_email).first()
+        if not organizer:
+            organizer = User(
+                first_name="MARIO",
+                last_name="Mastrulli",
+                email=organizer_email,
+                is_active=True,
+            )
+            organizer.set_password("Password123!")
+            db.session.add(organizer)
+            db.session.commit()
+            click.echo(f"Created organizer user {organizer_email} (id={organizer.id}).")
+
+        # 2) Create or reuse the specific tournament
+        tournament_name = "prova definitiva albero"
+        tournament = Tournament.query.filter_by(
+            organizer_id=organizer.id, name=tournament_name
+        ).first()
+
+        if not tournament:
+            tournament = Tournament(
+                organizer_id=organizer.id,
+                name=tournament_name,
+                discipline="tennis",
+                description="Torneo di test per verificare l'albero eliminazione diretta.",
+                venue_name="afsaasfsf",
+                start_at=datetime(2025, 12, 30, 10, 10, 0),
+                signup_deadline=datetime(2025, 12, 29, 10, 10, 0),
+                max_participants=10,
+                status="draft",
+            )
+            db.session.add(tournament)
+            db.session.commit()
+            click.echo(f"Created tournament '{tournament.name}' (id={tournament.id}).")
+        else:
+            click.echo(f"Using existing tournament '{tournament.name}' (id={tournament.id}).")
+
+        # 3) Clear existing participants & matches for a clean scenario
+        Match.query.filter_by(tournament_id=tournament.id).delete()
+        TournamentParticipant.query.filter_by(tournament_id=tournament.id).delete()
+        db.session.commit()
+
+        # 4) Create the 10 specific participants (ranking & license number)
+        participants_spec = [
+            (111, "111"),
+            (112, "LIC-T007-112"),
+            (113, "LIC-T007-113"),
+            (114, "LIC-T007-114"),
+            (115, "LIC-T007-115"),
+            (116, "LIC-T007-116"),
+            (117, "LIC-T007-117"),
+            (118, "LIC-T007-118"),
+            (119, "LIC-T007-119"),
+            (120, "LIC-T007-120"),
+        ]
+
+        created_participants: list[TournamentParticipant] = []
+
+        for ranking, license_number in participants_spec:
+            # Create (or reuse) a simple user for each ranking
+            email = f"player_{ranking}@example.com"
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(
+                    first_name=f"Player{ranking}",
+                    last_name="Test",
+                    email=email,
+                    is_active=True,
+                )
+                user.set_password("Password123!")
+                db.session.add(user)
+                db.session.flush()
+
+            participant = TournamentParticipant(
+                tournament_id=tournament.id,
+                user_id=user.id,
+                license_number=license_number,
+                ranking=ranking,
+                status="pending",
+            )
+            db.session.add(participant)
+            created_participants.append(participant)
+
+        db.session.commit()
+        click.echo(
+            f"Created {len(created_participants)} participants for '{tournament.name}' (id={tournament.id})."
+        )
+
+        # 5) Generate Round 1 bracket ignoring the signup deadline
+        created_round1 = _ensure_round1_bracket(tournament.id, ignore_deadline=True)
+        db.session.commit()
+
+        if not created_round1:
+            click.echo("Round 1 bracket was not created (maybe already present).")
+        else:
+            click.echo("Round 1 bracket created.")
+
+        # 6) Pick winners for matches 1–5 and advance them to Round 2
+        round1_matches = (
+            Match.query.filter_by(tournament_id=tournament.id, round_number=1)
+            .order_by(Match.bracket_position.asc())
+            .all()
+        )
+
+        winners_info: list[tuple[int, str]] = []
+
+        # Example: for Match 1–5, let player A win (if both players exist)
+        for match in round1_matches[:5]:
+            if not match.player_a_id or not match.player_b_id:
+                # Skip bye / incomplete pairings
+                continue
+
+            match.winner_id = match.player_a_id
+            _advance_winner(match)
+
+            if match.player_a is not None:
+                winners_info.append(
+                    (match.bracket_position, match.player_a.license_number)
+                )
+
+        db.session.commit()
+
+        if winners_info:
+            click.echo("Round 1 example results:")
+            for pos, lic in winners_info:
+                click.echo(f"  Match {pos}: winner {lic}")
+        else:
+            click.echo("No winners were assigned in Round 1 (check participants/matches).")
+
+        # 7) Auto-play later rounds until a single champion exists.
+        max_iterations = 10
+        champion_reported = False
+
+        for _ in range(max_iterations):
+            max_round = (
+                db.session.query(func.max(Match.round_number))
+                .filter_by(tournament_id=tournament.id)
+                .scalar()
+            )
+            if not max_round:
+                break
+
+            latest_matches = (
+                Match.query.filter_by(
+                    tournament_id=tournament.id, round_number=max_round
+                )
+                .order_by(Match.bracket_position.asc())
+                .all()
+            )
+            if not latest_matches:
+                break
+
+            # If there's a single match in the latest round, treat it as final
+            # and set the winner without advancing further.
+            if len(latest_matches) == 1:
+                final_match = latest_matches[0]
+                if final_match.winner_id is None:
+                    if final_match.player_a_id and final_match.player_b_id:
+                        final_match.winner_id = final_match.player_a_id
+                    elif final_match.player_a_id and not final_match.player_b_id:
+                        final_match.winner_id = final_match.player_a_id
+                    elif final_match.player_b_id and not final_match.player_a_id:
+                        final_match.winner_id = final_match.player_b_id
+                    db.session.commit()
+
+                if final_match.winner is not None:
+                    click.echo(
+                        "Champion: "
+                        f"#{final_match.winner.ranking} ({final_match.winner.license_number})"
+                    )
+                    champion_reported = True
+                break
+
+            progressed_any = False
+            for match in latest_matches:
+                if match.winner_id is not None:
+                    continue
+
+                # If both players are present, arbitrarily let player A win.
+                if match.player_a_id and match.player_b_id:
+                    match.winner_id = match.player_a_id
+                    _advance_winner(match)
+                    progressed_any = True
+                # If only one player is present, treat it as a bye win.
+                elif match.player_a_id and not match.player_b_id:
+                    match.winner_id = match.player_a_id
+                    _advance_winner(match)
+                    progressed_any = True
+                elif match.player_b_id and not match.player_a_id:
+                    match.winner_id = match.player_b_id
+                    _advance_winner(match)
+                    progressed_any = True
+
+            db.session.commit()
+
+            if not progressed_any:
+                break
+
+        if not champion_reported:
+            click.echo("Bracket progressed, but no single champion could be determined.")
+
+        click.echo(
+            "Bracket example ready. Open the tournament detail page for 'prova definitiva albero' to inspect the full tree."
         )
 
     @app.cli.command("seed-tournament-participants")
